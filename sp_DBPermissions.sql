@@ -9,7 +9,7 @@ Version: v7.1.0 - 03/12/2026 16:10
 Documentation: https://datapawsconsulting.com/sp_DBPermissions
 GitHub: https://github.com/DataPaws/sp_DBPermissions
 
-Credit: sp_DBPermissions V7.0 by Kenneth Fisher: https://github.com/sqlstudent144/SQL-Server-Scripts/blob/master/sp_DBPermissions.sql
+Credit: sp_DBPermissions by Kenneth Fisher: https://github.com/sqlstudent144/SQL-Server-Scripts/blob/master/sp_DBPermissions.sql
 
 This stored procedure returns 3 data sets.  The first dataset is the list of database
 principals, the second is role membership, and the third is object and database level
