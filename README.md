@@ -11,12 +11,11 @@ Parameters:
         If NULL use the current database, otherwise give permissions based on the parameter.
     
         There is a special case where you pass in ALL to the @DBName.  In this case the SP
-        will loop through all of the DBs in sys.databases and run
-        the queries into temp tables before returning the results.  WARNINGS: If you use
-        this option and have a large number of databases it will be SLOW.  If you use this
-        option and don't specify any other parameters (say a specific @Principal) and have
-        even a medium number of databases it will be SLOW.  Also the undo/do scripts do 
-        not have USE statements in them so please take that into account.
+        will loop through all of the DBs in sys.databases and run the queries into temp tables
+		before returning the results.  WARNINGS: If you use this option and have a large number
+		of databases it will be SLOW.  If you use this option and don't specify any other parameters
+		(say a specific @Principal) and have even a medium number of databases it will be SLOW. Also
+		the undo/do scripts do not have USE statements in them so please take that into account.
     @Principal
         If NOT NULL then all three queries only pull for that database principal.  @Principal
         is a pattern check.  The queries check for any row where the passed in value exists.
@@ -38,8 +37,7 @@ Parameters:
     @ObjectName
         If NOT NULL then the third query will display permissions specific to the object 
         specified and the first two queries will display only those users with those specific
-        permissions.  Unfortunately at this point only objects in sys.all_objects will work.
-        This parameter uses the pattern '%' + @ObjectName + '%'
+        permissions. This parameter uses the pattern '%' + @ObjectName + '%'
     @Permission
         If NOT NULL then the third query will display only permissions that match what is in
         the parameter.  The first two queries will display only those users with that specific
