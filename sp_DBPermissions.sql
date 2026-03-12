@@ -6,6 +6,8 @@ GO
 /*********************************************************************************************
 sp_DBPermissions - Continuation by DataPaws
 Version: v7.1.0 - 03/12/2026 16:10
+Documentation: https://datapawsconsulting.com/sp_DBPermissions
+GitHub: https://github.com/DataPaws/sp_DBPermissions
 
 Credit: sp_DBPermissions V7.0 by Kenneth Fisher: https://github.com/sqlstudent144/SQL-Server-Scripts/blob/master/sp_DBPermissions.sql
 
