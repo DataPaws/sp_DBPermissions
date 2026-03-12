@@ -5,7 +5,7 @@ IF OBJECT_ID('dbo.sp_DBPermissions') IS NULL
 GO
 /*********************************************************************************************
 sp_DBPermissions - Continuation by DataPaws
-Version: v7.1
+Version: v7.0.1 -03/12/2026 15:47
 
 Credit: sp_DBPermissions V7.0 by Kenneth Fisher: https://github.com/sqlstudent144/SQL-Server-Scripts/blob/master/sp_DBPermissions.sql
     
