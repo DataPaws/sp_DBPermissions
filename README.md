@@ -1,10 +1,20 @@
 # sp_DBPermissions
+This is a free tool from **[DataPaws](https://datapawsconsulting.com)** for SQL Server Database Administrators to gain visibility into permissions at the database-level, as well as quickly drop/create them.
+
+This is a continuation of [sp_DBPermissions V7.0 by Kenneth Fisher](https://github.com/sqlstudent144/SQL-Server-Scripts/blob/main/sp_DBPermissions.sql)
+
+# What does sp_DBPermissions do?
 This stored procedure returns 3 data sets. The first dataset is the list of database
 principals, the second is role membership, and the third is object and database level
 permissions.
-    
-The final 2 columns of each query are "Un-Do"/"Do" scripts.  For example removing a member
-from a role or adding them to a role.
+
+You can specify the following for @Output:
+```
+		CreateOnly 	- Returns scripts to create both the database principal and grant database permissions
+		DropOnly 	- Returns scripts to drop database permissions
+		ScriptsOnly - Returns drop and create scripts
+		Report 		- Returns one output with one row per principal and a comma delimited list of roles the principal is a member of and a comma delimited list of the individual permissions they have.
+```
 ```
 Parameters:
     @DBName
@@ -60,17 +70,13 @@ Parameters:
 			##DBRoles 
 			##DBPermissions
 	@Output
-		What type of output is desired.
-		Default - Either 'Default' or it doesn't match any of the allowed values then the SP
-					will return the standard 3 outputs.
-		None - No output at all.  Usually used if you keeping the temp tables to do your own
-					reporting.
-		CreateOnly - Only return the create scripts where they aren't NULL.
-		DropOnly - Only return the drop scripts where they aren't NULL.
-		ScriptsOnly - Return drop and create scripts where they aren't NULL.
-		Report - Returns one output with one row per principal and a comma delimited list of
-					roles the principal is a member of and a comma delimited list of the 
-					individual permissions they have.
+		Type of output desired
+		Default 	- Either 'Default' or it doesn't match any of the allowed values then the SP will return the standard 3 outputs.
+		None		- No output at all.  Usually used if you keeping the temp tables to do your own reporting.
+		CreateOnly 	- Returns scripts to create both the database principal and grant database permissions
+		DropOnly 	- Returns scripts to drop database permissions
+		ScriptsOnly - Returns drop and create scripts
+		Report 		- Returns one output with one row per principal and a comma delimited list of roles the principal is a member of and a comma delimited list of the individual permissions they have.
     @Print
         Defaults to 0, but if a 1 is passed in then the queries are not run but printed
         out instead.  This is primarily for debugging.
