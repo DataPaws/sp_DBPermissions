@@ -1,7 +1,7 @@
 # sp_DBPermissions
 This is a free tool from **[DataPaws](https://datapawsconsulting.com)** for SQL Server Database Administrators to gain visibility into permissions at the database-level, as well as quickly drop/create them.
 
-This is a continuation of [sp_DBPermissions V7.0 by Kenneth Fisher](https://github.com/sqlstudent144/SQL-Server-Scripts/blob/main/sp_DBPermissions.sql)
+This is a continuation of [sp_DBPermissions by Kenneth Fisher](https://github.com/sqlstudent144/SQL-Server-Scripts/blob/main/sp_DBPermissions.sql)
 
 # What does sp_DBPermissions do?
 This stored procedure returns 3 data sets. The first dataset is the list of database
