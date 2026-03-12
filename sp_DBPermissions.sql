@@ -5,10 +5,10 @@ IF OBJECT_ID('dbo.sp_DBPermissions') IS NULL
 GO
 /*********************************************************************************************
 sp_DBPermissions - Continuation by DataPaws
-Version: v7.0.1 -03/12/2026 15:47
+Version: v7.1.0 - 03/12/2026 16:10
 
 Credit: sp_DBPermissions V7.0 by Kenneth Fisher: https://github.com/sqlstudent144/SQL-Server-Scripts/blob/master/sp_DBPermissions.sql
-    
+
 This stored procedure returns 3 data sets.  The first dataset is the list of database
 principals, the second is role membership, and the third is object and database level
 permissions.
@@ -945,25 +945,94 @@ BEGIN
     ELSE IF @Output = 'Report'
     BEGIN
         SELECT DBName, DBPrincipal, SrvPrincipal, type, type_desc,
-                STUFF((SELECT N', ' + ##DBRoles.RoleName
-                        FROM ##DBRoles
-                        WHERE ##DBPrincipals.DBName = ##DBRoles.DBName
-                          AND ##DBPrincipals.DBPrincipalId = ##DBRoles.UserPrincipalId
-                        ORDER BY ##DBRoles.RoleName
-                        FOR XML PATH(''),TYPE).value('.','NVARCHAR(MAX)')
-                    , 1, 2, '') AS RoleMembership,
-                STUFF((SELECT N', ' + ##DBPermissions.state_desc + N' ' + ##DBPermissions.permission_name + N' on ' + 
-                        COALESCE(N'OBJECT:'+##DBPermissions.SchemaName + N'.' + ##DBPermissions.ObjectName, 
-                                N'SCHEMA:'+##DBPermissions.SchemaName,
-                                N'DATABASE:'+##DBPermissions.DBName)
-                        FROM ##DBPermissions
-                        WHERE ##DBPrincipals.DBName = ##DBPermissions.DBName
-                          AND ##DBPrincipals.DBPrincipalId = ##DBPermissions.GranteePrincipalId
-                        ORDER BY ##DBPermissions.state_desc, ISNULL(##DBPermissions.ObjectName, ##DBPermissions.DBName), ##DBPermissions.permission_name
-                        FOR XML PATH(''),TYPE).value('.','NVARCHAR(MAX)')
-                    , 1, 2, '') AS DirectPermissions
+            STUFF((
+                SELECT N', ' + ##DBRoles.RoleName
+                FROM ##DBRoles
+                WHERE ##DBPrincipals.DBName = ##DBRoles.DBName
+                    AND ##DBPrincipals.DBPrincipalId = ##DBRoles.UserPrincipalId
+                ORDER BY ##DBRoles.RoleName
+                FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)')
+            , 1, 2, '') AS RoleMembership,
+
+            STUFF((
+                SELECT N', ' + dp.state_desc + N' ' + dp.permission_name + N' ON ' +
+                        CASE dp.class_desc
+                            WHEN 'OBJECT_OR_COLUMN' THEN
+                                N'OBJECT:' +
+                                COALESCE(QUOTENAME(dp.SchemaName) + N'.', N'') +
+                                QUOTENAME(x.BaseObject) +
+                                CASE WHEN x.HasCol = 1
+                                        THEN N' (' + QUOTENAME(x.ColName) + N')'
+                                        ELSE N''
+                                END
+                            WHEN 'SCHEMA' THEN
+                                N'SCHEMA:' + QUOTENAME(dp.SchemaName)
+                            WHEN 'DATABASE' THEN
+                                N'DATABASE:' + QUOTENAME(dp.DBName)
+                            WHEN 'TYPE' THEN
+                                N'TYPE:' + QUOTENAME(dp.SchemaName) + N'.' + QUOTENAME(dp.ObjectName)
+                            WHEN 'XML_SCHEMA_COLLECTION' THEN
+                                N'XML SCHEMA COLLECTION:' + QUOTENAME(dp.SchemaName) + N'.' + QUOTENAME(dp.ObjectName)
+                            WHEN 'CERTIFICATE' THEN
+                                N'CERTIFICATE:' + QUOTENAME(dp.ObjectName)
+                            WHEN 'SYMMETRIC_KEYS' THEN
+                                N'SYMMETRIC KEY:' + QUOTENAME(dp.ObjectName)
+                            WHEN 'ASYMMETRIC_KEY' THEN
+                                N'ASYMMETRIC KEY:' + QUOTENAME(dp.ObjectName)
+                            WHEN 'ASSEMBLY' THEN
+                                N'ASSEMBLY:' + QUOTENAME(dp.ObjectName)
+                            WHEN 'MESSAGE_TYPE' THEN
+                                N'MESSAGE TYPE:' + QUOTENAME(dp.ObjectName)
+                            WHEN 'SERVICE_CONTRACT' THEN
+                                N'CONTRACT:' + QUOTENAME(dp.ObjectName)
+                            WHEN 'SERVICE' THEN
+                                N'SERVICE:' + QUOTENAME(dp.ObjectName)
+                            WHEN 'REMOTE_SERVICE_BINDING' THEN
+                                N'REMOTE SERVICE BINDING:' + QUOTENAME(dp.ObjectName)
+                            WHEN 'ROUTE' THEN
+                                N'ROUTE:' + QUOTENAME(dp.ObjectName)
+                            WHEN 'FULLTEXT_CATALOG' THEN
+                                N'FULLTEXT CATALOG:' + QUOTENAME(dp.ObjectName)
+                            WHEN 'DATABASE_PRINCIPAL' THEN
+                                N'DATABASE PRINCIPAL:' + QUOTENAME(dp.ObjectName)
+                            ELSE
+                                dp.class_desc + N':' +
+                                COALESCE(QUOTENAME(dp.SchemaName) + N'.', N'') +
+                                COALESCE(QUOTENAME(dp.ObjectName), QUOTENAME(dp.DBName))
+                        END
+                FROM ##DBPermissions AS dp
+                CROSS APPLY (
+                    SELECT 
+                        OpenIdx  = CHARINDEX(' (', dp.ObjectName),
+                        CloseIdx = CASE 
+                                        WHEN CHARINDEX(' (', dp.ObjectName) > 0 
+                                        THEN CHARINDEX(')', dp.ObjectName, CHARINDEX(' (', dp.ObjectName) + 2)
+                                        ELSE 0 
+                                    END
+                ) a
+                CROSS APPLY (
+                    SELECT 
+                        HasCol     = CASE WHEN a.OpenIdx > 0 AND a.CloseIdx > a.OpenIdx THEN 1 ELSE 0 END,
+                        BaseObject = CASE 
+                                        WHEN a.OpenIdx > 0 AND a.CloseIdx > a.OpenIdx 
+                                        THEN RTRIM(LEFT(dp.ObjectName, a.OpenIdx - 1))
+                                        ELSE dp.ObjectName
+                                        END,
+                        ColName    = CASE 
+                                        WHEN a.OpenIdx > 0 AND a.CloseIdx > a.OpenIdx 
+                                        THEN LTRIM(RTRIM(SUBSTRING(dp.ObjectName, a.OpenIdx + 2, a.CloseIdx - (a.OpenIdx + 2))))
+                                        ELSE NULL
+                                        END
+                ) x
+                WHERE ##DBPrincipals.DBName = dp.DBName
+                    AND ##DBPrincipals.DBPrincipalId = dp.GranteePrincipalId
+                ORDER BY dp.state_desc,
+                            COALESCE(dp.ObjectName, dp.DBName),
+                            dp.permission_name
+                FOR XML PATH(''), TYPE).value('.', 'NVARCHAR(MAX)')
+            , 1, 2, '') AS DirectPermissions
         FROM ##DBPrincipals
-        ORDER BY DBName, type, DBPrincipal
+        ORDER BY DBName, type, DBPrincipal;
     END
     ELSE -- 'Default' or no match
     BEGIN
