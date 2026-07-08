@@ -3,6 +3,12 @@ This is a free tool from **[DataPaws](https://datapawsconsulting.com)** for SQL 
 
 This is a continuation of [sp_DBPermissions by Kenneth Fisher](https://github.com/sqlstudent144/SQL-Server-Scripts/blob/main/sp_DBPermissions.sql)
 
+# Changes/Improvements
+- Excludes AG Secondary databases where allow connections is off
+- Improved Report Output Type to show permissions at a column-level and on non-schema bound objects such as certificates, keys and more
+- Changed type_desc from nchar to nvarchar to remove trailing spaces
+- Replaces usage of global temp tables with local temp tables to allow for multiple simulaneous executions (Useful when using a CMS or running against servers with a large number of databases)
+
 # What does sp_DBPermissions do?
 This stored procedure returns 3 data sets. The first dataset is the list of database
 principals, the second is role membership, and the third is object and database level
@@ -43,6 +49,8 @@ Parameters:
         R = Server role
         C = Login mapped to a certificate
         K = Login mapped to an asymmetric key
+		E = External login or application from Microsoft Entra ID
+		X = External group from Microsoft Entra ID
     @ObjectName
         If NOT NULL then the third query will display permissions specific to the object 
         specified and the first two queries will display only those users with those specific
