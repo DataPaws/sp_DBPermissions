@@ -58,6 +58,8 @@ Parameters:
         R = Server role
         C = Login mapped to a certificate
         K = Login mapped to an asymmetric key
+		E = External login or application from Microsoft Entra ID
+		X = External group from Microsoft Entra ID
     @ObjectName
         If NOT NULL then the third query will display permissions specific to the object 
         specified and the first two queries will display only those users with those specific
