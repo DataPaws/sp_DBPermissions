@@ -5,7 +5,7 @@ This is a continuation of [sp_DBPermissions by Kenneth Fisher](https://github.co
 
 # Changes/Improvements
 - Excludes AG Secondary databases where allow connections is off
-- Improved Report Output Type to show permissions at a column-level and on non-schema bound objects such as certificates, keys and more
+- Improved Report Output Type to show column-level permissions and permissions on non-schema bound objects such as certificates, keys and more
 - Changed type_desc from nchar to nvarchar to remove trailing spaces
 - Replaces usage of global temp tables with local temp tables to allow for multiple simultaneous executions (Useful when using a CMS or running against servers with a large number of databases)
 
