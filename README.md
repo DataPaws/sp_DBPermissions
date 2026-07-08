@@ -18,23 +18,22 @@ You can specify the following for @Output:
 ```
 Parameters:
     @DBName
-        If NULL use the current database, otherwise give permissions based on the parameter.
+        If NULL use the current database, otherwise show permissions for the specified database.
     
-        There is a special case where you pass in ALL to the @DBName.  In this case the SP
-        will loop through all of the DBs in sys.databases and run the queries into temp tables
-		before returning the results.  WARNINGS: If you use this option and have a large number
-		of databases it will be SLOW.  If you use this option and don't specify any other parameters
-		(say a specific @Principal) and have even a medium number of databases it will be SLOW. Also
-		the undo/do scripts do not have USE statements in them so please take that into account.
+        Pass in "ALL" to @DBName and it will loop through all databases.
+		WARNINGS: If you use this option and have a large number of databases it will be SLOW.
+		If you use this option and don't specify any other parameters (say a specific @Principal)
+		and have even a medium number of databases it will be SLOW. Also the undo/do scripts do not
+		have USE statements in them so please take that into account.
     @Principal
         If NOT NULL then all three queries only pull for that database principal.  @Principal
-        is a pattern check.  The queries check for any row where the passed in value exists.
+        is a pattern check. The queries check for any row where the passed in value exists.
         It uses the pattern '%' + @Principal + '%'
     @Role
-        If NOT NULL then the roles query will pull members of the role.  If it is NOT NULL and
+        If NOT NULL then the roles query will pull members of the role. If it is NOT NULL and
         @DBName is NULL then DB principal and permissions query will pull the principal row for
-        the role and the permissions for the role.  @Role is a pattern check.  The queries 
-        check for any row where the passed in value exists.  It uses the pattern '%' + @Role +
+        the role and the permissions for the role. @Role is a pattern check. The queries 
+        check for any row where the passed in value exists. It uses the pattern '%' + @Role +
         '%'
     @Type
         If NOT NULL then all three queries will only pull principals of that type.  
@@ -50,7 +49,7 @@ Parameters:
         permissions. This parameter uses the pattern '%' + @ObjectName + '%'
     @Permission
         If NOT NULL then the third query will display only permissions that match what is in
-        the parameter.  The first two queries will display only those users with that specific
+        the parameter. The first two queries will display only those users with that specific
         permission.
     @LoginName
         If NOT NULL then each of the queries will only pull back database principals that
@@ -60,15 +59,15 @@ Parameters:
 		%'s will be added around the @Principal, @Role, @ObjectName, and @LoginName parameters).  
         When set to 0 searchs will use =.
 	@IncludeMSShipped
-		When this is set to 1 (the default) then all principals will be included.  When set 
+		When this is set to 1 (the default) then all principals will be included. When set 
 		to 0 the fixed server roles and SA and Public principals will be excluded.
 	@DropTempTables
-		When this is set to 1 (the default) the temp tables used are dropped.  If it's 0
-		then the temp ables are kept for references after the code has finished.
+		When this is set to 1 (the default) the temp tables used are dropped. If it's 0
+		then the temp tables are kept for references after the code has finished.
 		The temp tables are:
-			##DBPrincipals
-			##DBRoles 
-			##DBPermissions
+			#DBPrincipals
+			#DBRoles 
+			#DBPermissions
 	@Output
 		Type of output desired
 		Default 	- Either 'Default' or it doesn't match any of the allowed values then the SP will return the standard 3 outputs.
@@ -79,7 +78,7 @@ Parameters:
 		Report 		- Returns one output with one row per principal and a comma delimited list of roles the principal is a member of and a comma delimited list of the individual permissions they have.
     @Print
         Defaults to 0, but if a 1 is passed in then the queries are not run but printed
-        out instead.  This is primarily for debugging.
+        out instead. This is primarily for debugging.
     
 Data is ordered as follows
     1st result set: DBPrincipal
