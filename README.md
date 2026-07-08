@@ -7,7 +7,7 @@ This is a continuation of [sp_DBPermissions by Kenneth Fisher](https://github.co
 - Excludes AG Secondary databases where allow connections is off
 - Improved Report Output Type to show permissions at a column-level and on non-schema bound objects such as certificates, keys and more
 - Changed type_desc from nchar to nvarchar to remove trailing spaces
-- Replaces usage of global temp tables with local temp tables to allow for multiple simulaneous executions (Useful when using a CMS or running against servers with a large number of databases)
+- Replaces usage of global temp tables with local temp tables to allow for multiple simultaneous executions (Useful when using a CMS or running against servers with a large number of databases)
 
 # What does sp_DBPermissions do?
 This stored procedure returns 3 data sets. The first dataset is the list of database
