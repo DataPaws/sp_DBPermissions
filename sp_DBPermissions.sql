@@ -11,6 +11,7 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_DBPermissions]
     @LoginName sysname = NULL,
     @UseLikeSearch bit = 1,
     @IncludeMSShipped bit = 1,
+    @IncludeMSShippedObjects bit = 1,
     @CopyTo sysname = NULL,
     @DropTempTables bit = 1,
     @ShowOrphans bit = 0,
@@ -20,7 +21,7 @@ CREATE OR ALTER PROCEDURE [dbo].[sp_DBPermissions]
 AS
 /*
 sp_DBPermissions - Continuation by DataPaws
-Version: v7.1.2 - 07/08/2026
+Version: v7.1.3 - 10/08/2026
 
 Original Script by Kenneth Fisher: https://github.com/sqlstudent144/SQL-Server-Scripts/blob/master/sp_DBPermissions.sql
 
@@ -78,6 +79,9 @@ Parameters:
 	@IncludeMSShipped
 		When this is set to 1 (the default) then all principals will be included. When set 
 		to 0 the fixed server roles and SA and Public principals will be excluded.
+    @IncludeMSShippedObjects
+        When this is set to 1 (the default) then all system objects from sys.all_objects will be included. When set
+        to 0 the system objects will be excluded.
 	@DropTempTables
 		When this is set to 1 (the default) the temp tables used are dropped. If it's 0
 		then the temp tables are kept for references after the code has finished.
@@ -578,125 +582,184 @@ END
 -- Database & object Permissions
 IF NOT (SERVERPROPERTY('ProductVersion') >= '12' AND @ShowOrphans = 1)
 BEGIN
-SET @ObjectList =
-    N'; WITH ObjectList AS (
-       SELECT NULL AS SchemaName , 
-           name ' + @Collation + ' AS name, 
-           database_id AS id, 
-           ''DATABASE'' AS class_desc,
-           '''' AS class 
-       FROM master.sys.databases
-       UNION ALL
-       SELECT SCHEMA_NAME(sys.all_objects.schema_id) ' + @Collation + N' AS SchemaName,
-           name ' + @Collation + N' AS name, 
-           object_id AS id, 
-           ''OBJECT_OR_COLUMN'' AS class_desc,
-           ''OBJECT'' AS class 
-       FROM sys.all_objects
-       UNION ALL
-       SELECT name ' + @Collation + N' AS SchemaName, 
-           NULL AS name, 
-           schema_id AS id, 
-           ''SCHEMA'' AS class_desc,
-           ''SCHEMA'' AS class 
-       FROM sys.schemas
-       UNION ALL
-       SELECT NULL AS SchemaName, 
-           name ' + @Collation + N' AS name, 
-           principal_id AS id, 
-           ''DATABASE_PRINCIPAL'' AS class_desc,
-           CASE type_desc 
-               WHEN ''APPLICATION_ROLE'' THEN ''APPLICATION ROLE'' 
-               WHEN ''DATABASE_ROLE'' THEN ''ROLE'' 
-               ELSE ''USER'' END AS class 
-       FROM sys.database_principals
-       UNION ALL
-       SELECT SCHEMA_NAME(schema_id) ' + @Collation + N' AS SchemaName, 
-           name ' + @Collation + N' AS name, 
-           xml_collection_id AS id, 
-           ''XML_SCHEMA_COLLECTION'' AS class_desc,
-           ''XML SCHEMA COLLECTION'' AS class 
-       FROM sys.xml_schema_collections
-       UNION ALL
-       SELECT NULL AS SchemaName, 
-           name ' + @Collation + N' AS name, 
-           message_type_id AS id, 
-           ''MESSAGE_TYPE'' AS class_desc,
-           ''MESSAGE TYPE'' AS class 
-       FROM sys.service_message_types
-       UNION ALL
-       SELECT NULL AS SchemaName, 
-           name ' + @Collation + N' AS name, 
-           assembly_id AS id, 
-           ''ASSEMBLY'' AS class_desc,
-           ''ASSEMBLY'' AS class 
-       FROM sys.assemblies
-       UNION ALL'
+    SET @ObjectList =
+        N'; WITH ObjectList AS (
+        SELECT NULL AS SchemaName , 
+            name ' + @Collation + ' AS name, 
+            database_id AS id, 
+            ''DATABASE'' AS class_desc,
+            '''' AS class 
+        FROM master.sys.databases
+        UNION ALL
+        SELECT SCHEMA_NAME(sys.all_objects.schema_id) ' + @Collation + N' AS SchemaName,
+            name ' + @Collation + N' AS name, 
+            object_id AS id, 
+            ''OBJECT_OR_COLUMN'' AS class_desc,
+            ''OBJECT'' AS class 
+        FROM sys.all_objects
+        UNION ALL
+        SELECT name ' + @Collation + N' AS SchemaName, 
+            NULL AS name, 
+            schema_id AS id, 
+            ''SCHEMA'' AS class_desc,
+            ''SCHEMA'' AS class 
+        FROM sys.schemas
+        UNION ALL
+        SELECT NULL AS SchemaName, 
+            name ' + @Collation + N' AS name, 
+            principal_id AS id, 
+            ''DATABASE_PRINCIPAL'' AS class_desc,
+            CASE type_desc 
+                WHEN ''APPLICATION_ROLE'' THEN ''APPLICATION ROLE'' 
+                WHEN ''DATABASE_ROLE'' THEN ''ROLE'' 
+                ELSE ''USER'' END AS class 
+        FROM sys.database_principals
+        UNION ALL
+        SELECT SCHEMA_NAME(schema_id) ' + @Collation + N' AS SchemaName, 
+            name ' + @Collation + N' AS name, 
+            xml_collection_id AS id, 
+            ''XML_SCHEMA_COLLECTION'' AS class_desc,
+            ''XML SCHEMA COLLECTION'' AS class 
+        FROM sys.xml_schema_collections
+        UNION ALL
+        SELECT NULL AS SchemaName, 
+            name ' + @Collation + N' AS name, 
+            message_type_id AS id, 
+            ''MESSAGE_TYPE'' AS class_desc,
+            ''MESSAGE TYPE'' AS class 
+        FROM sys.service_message_types
+        UNION ALL
+        SELECT NULL AS SchemaName, 
+            name ' + @Collation + N' AS name, 
+            assembly_id AS id, 
+            ''ASSEMBLY'' AS class_desc,
+            ''ASSEMBLY'' AS class 
+        FROM sys.assemblies
+        UNION ALL'
 
-SET @ObjectList2 =  N'
-       SELECT SCHEMA_NAME(sys.types.schema_id) ' + @Collation + N' AS SchemaName, 
-           name ' + @Collation + N' AS name, 
-           user_type_id AS id, 
-           ''TYPE'' AS class_desc,
-           ''TYPE'' AS class 
-       FROM sys.types
-       UNION ALL
-       SELECT NULL AS SchemaName, 
-           name ' + @Collation + N' AS name, 
-           service_contract_id AS id, 
-           ''SERVICE_CONTRACT'' AS class_desc,
-           ''CONTRACT'' AS class 
-       FROM sys.service_contracts
-       UNION ALL
-       SELECT NULL AS SchemaName, 
-           name ' + @Collation + N' AS name, 
-           service_id AS id, 
-           ''SERVICE'' AS class_desc,
-           ''SERVICE'' AS class 
-       FROM sys.services
-       UNION ALL
-       SELECT NULL AS SchemaName, 
-           name ' + @Collation + N' AS name, 
-           remote_service_binding_id AS id, 
-           ''REMOTE_SERVICE_BINDING'' AS class_desc,
-           ''REMOTE SERVICE BINDING'' AS class 
-       FROM sys.remote_service_bindings
-       UNION ALL
-       SELECT NULL AS SchemaName, 
-           name ' + @Collation + N' AS name, 
-           route_id AS id, 
-           ''ROUTE'' AS class_desc,
-           ''ROUTE'' AS class 
-       FROM sys.routes
-       UNION ALL
-       SELECT NULL AS SchemaName, 
-           name ' + @Collation + N' AS name, 
-           fulltext_catalog_id AS id, 
-           ''FULLTEXT_CATALOG'' AS class_desc,
-           ''FULLTEXT CATALOG'' AS class 
-       FROM sys.fulltext_catalogs
-       UNION ALL
-       SELECT NULL AS SchemaName, 
-           name ' + @Collation + N' AS name, 
-           symmetric_key_id AS id, 
-           ''SYMMETRIC_KEYS'' AS class_desc,
-           ''SYMMETRIC KEY'' AS class 
-       FROM sys.symmetric_keys
-       UNION ALL
-       SELECT NULL AS SchemaName, 
-           name ' + @Collation + N' AS name, 
-           certificate_id AS id, 
-           ''CERTIFICATE'' AS class_desc,
-           ''CERTIFICATE'' AS class 
-       FROM sys.certificates
-       UNION ALL
-       SELECT NULL AS SchemaName, 
-           name ' + @Collation + N' AS name, 
-           asymmetric_key_id AS id, 
-           ''ASYMMETRIC_KEY'' AS class_desc,
-           ''ASYMMETRIC KEY'' AS class 
-       FROM sys.asymmetric_keys 
-       ) ' + NCHAR(13)
+    IF @IncludeMSShippedObjects = 0
+    BEGIN
+        SET @ObjectList =
+            N'; WITH ObjectList AS (
+            SELECT NULL AS SchemaName , 
+                name ' + @Collation + ' AS name, 
+                database_id AS id, 
+                ''DATABASE'' AS class_desc,
+                '''' AS class 
+            FROM master.sys.databases
+            UNION ALL
+            SELECT SCHEMA_NAME(sys.all_objects.schema_id) ' + @Collation + N' AS SchemaName,
+                name ' + @Collation + N' AS name, 
+                object_id AS id, 
+                ''OBJECT_OR_COLUMN'' AS class_desc,
+                ''OBJECT'' AS class 
+            FROM sys.all_objects
+            WHERE is_ms_shipped = 0
+            UNION ALL
+            SELECT name ' + @Collation + N' AS SchemaName, 
+                NULL AS name, 
+                schema_id AS id, 
+                ''SCHEMA'' AS class_desc,
+                ''SCHEMA'' AS class 
+            FROM sys.schemas
+            UNION ALL
+            SELECT NULL AS SchemaName, 
+                name ' + @Collation + N' AS name, 
+                principal_id AS id, 
+                ''DATABASE_PRINCIPAL'' AS class_desc,
+                CASE type_desc 
+                    WHEN ''APPLICATION_ROLE'' THEN ''APPLICATION ROLE'' 
+                    WHEN ''DATABASE_ROLE'' THEN ''ROLE'' 
+                    ELSE ''USER'' END AS class 
+            FROM sys.database_principals
+            UNION ALL
+            SELECT SCHEMA_NAME(schema_id) ' + @Collation + N' AS SchemaName, 
+                name ' + @Collation + N' AS name, 
+                xml_collection_id AS id, 
+                ''XML_SCHEMA_COLLECTION'' AS class_desc,
+                ''XML SCHEMA COLLECTION'' AS class 
+            FROM sys.xml_schema_collections
+            UNION ALL
+            SELECT NULL AS SchemaName, 
+                name ' + @Collation + N' AS name, 
+                message_type_id AS id, 
+                ''MESSAGE_TYPE'' AS class_desc,
+                ''MESSAGE TYPE'' AS class 
+            FROM sys.service_message_types
+            UNION ALL
+            SELECT NULL AS SchemaName, 
+                name ' + @Collation + N' AS name, 
+                assembly_id AS id, 
+                ''ASSEMBLY'' AS class_desc,
+                ''ASSEMBLY'' AS class 
+            FROM sys.assemblies
+            UNION ALL'
+    END
+
+    SET @ObjectList2 =  N'
+        SELECT SCHEMA_NAME(sys.types.schema_id) ' + @Collation + N' AS SchemaName, 
+            name ' + @Collation + N' AS name, 
+            user_type_id AS id, 
+            ''TYPE'' AS class_desc,
+            ''TYPE'' AS class 
+        FROM sys.types
+        UNION ALL
+        SELECT NULL AS SchemaName, 
+            name ' + @Collation + N' AS name, 
+            service_contract_id AS id, 
+            ''SERVICE_CONTRACT'' AS class_desc,
+            ''CONTRACT'' AS class 
+        FROM sys.service_contracts
+        UNION ALL
+        SELECT NULL AS SchemaName, 
+            name ' + @Collation + N' AS name, 
+            service_id AS id, 
+            ''SERVICE'' AS class_desc,
+            ''SERVICE'' AS class 
+        FROM sys.services
+        UNION ALL
+        SELECT NULL AS SchemaName, 
+            name ' + @Collation + N' AS name, 
+            remote_service_binding_id AS id, 
+            ''REMOTE_SERVICE_BINDING'' AS class_desc,
+            ''REMOTE SERVICE BINDING'' AS class 
+        FROM sys.remote_service_bindings
+        UNION ALL
+        SELECT NULL AS SchemaName, 
+            name ' + @Collation + N' AS name, 
+            route_id AS id, 
+            ''ROUTE'' AS class_desc,
+            ''ROUTE'' AS class 
+        FROM sys.routes
+        UNION ALL
+        SELECT NULL AS SchemaName, 
+            name ' + @Collation + N' AS name, 
+            fulltext_catalog_id AS id, 
+            ''FULLTEXT_CATALOG'' AS class_desc,
+            ''FULLTEXT CATALOG'' AS class 
+        FROM sys.fulltext_catalogs
+        UNION ALL
+        SELECT NULL AS SchemaName, 
+            name ' + @Collation + N' AS name, 
+            symmetric_key_id AS id, 
+            ''SYMMETRIC_KEYS'' AS class_desc,
+            ''SYMMETRIC KEY'' AS class 
+        FROM sys.symmetric_keys
+        UNION ALL
+        SELECT NULL AS SchemaName, 
+            name ' + @Collation + N' AS name, 
+            certificate_id AS id, 
+            ''CERTIFICATE'' AS class_desc,
+            ''CERTIFICATE'' AS class 
+        FROM sys.certificates
+        UNION ALL
+        SELECT NULL AS SchemaName, 
+            name ' + @Collation + N' AS name, 
+            asymmetric_key_id AS id, 
+            ''ASYMMETRIC_KEY'' AS class_desc,
+            ''ASYMMETRIC KEY'' AS class 
+        FROM sys.asymmetric_keys 
+        ) ' + NCHAR(13)
 
     SET @sql =
     N'SELECT ' + CASE WHEN @DBName = 'All' THEN N'@AllDBNames' ELSE N'N''' + @DBName + N'''' END + N' AS DBName, 
@@ -742,7 +805,12 @@ SET @ObjectList2 =  N'
     LEFT OUTER JOIN sys.columns AS Columns 
        ON Permission.major_id = Columns.object_id 
        AND Permission.minor_id = Columns.column_id 
-    WHERE 1=1 '
+    WHERE 1=1 
+        AND NOT (
+        Permission.class_desc = ''OBJECT_OR_COLUMN''
+        AND ObjectList.id IS NULL
+        AND OBJECT_NAME(Permission.major_id) IS NOT NULL
+    )'
     
 IF LEN(ISNULL(@Principal,@Role)) > 0
     IF @Print = 1
